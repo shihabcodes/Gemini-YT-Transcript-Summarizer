@@ -19,9 +19,11 @@ prompt = """Welcome, Video Summarizer! Your task is to distill the essence of a 
 # Function to extract transcript details from a YouTube video URL
 def extract_transcript_details(youtube_video_url):
     try:
-        match = re.search(r"(v=|watch\?v=)([a-zA-Z0-9_-]+)", youtube_video_url)
+        match = re.match(
+            r"^(http|https)://www\.youtube\.com/(v=|watch\?v=)([a-zA-Z0-9_-]+)", youtube_video_url)
         if match:
-            video_id = match.group(2)
+
+            video_id = match.group(3)
             print(video_id)
             transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
             transcript = " ".join([item["text"] for item in transcript_text])
