@@ -16,20 +16,23 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 prompt = """Welcome, Video Summarizer! Your task is to distill the essence of a given YouTube video transcript into a concise summary. Your summary should capture the key points and essential information, presented in bullet points, within a 250-word limit. Let's dive into the provided transcript and extract the vital details for our audience."""
 
 
+def get_video_id(youtube_video_url):
+    match = re.match(
+        r"^(http|https)://www\.youtube\.com/(v=|watch\?v=)([a-zA-Z0-9_-]+)", youtube_video_url)
+    if match:
+        return match.group(3)
+    else:
+        raise ValueError("Invalid YouTube URL format.")
+
 # Function to extract transcript details from a YouTube video URL
+
+
 def extract_transcript_details(youtube_video_url):
     try:
-        match = re.match(
-            r"^(http|https)://www\.youtube\.com/(v=|watch\?v=)([a-zA-Z0-9_-]+)", youtube_video_url)
-        if match:
-
-            video_id = match.group(3)
-            print(video_id)
-            transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
-            transcript = " ".join([item["text"] for item in transcript_text])
-            return transcript
-        else:
-            raise ValueError("Invalid YouTube URL format.")
+        video_id = get_video_id(youtube_video_url)
+        transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
+        transcript = " ".join([item["text"] for item in transcript_text])
+        return transcript
     except ConnectionError:
         raise ConnectionError("Network error occurred.")
     except Exception as e:
@@ -51,7 +54,7 @@ st.title(
 youtube_link = st.text_input("Enter YouTube Video Link:")
 
 if youtube_link:
-    video_id = youtube_link.split("=")[1]
+    video_id = get_video_id(youtube_link)
     st.image(
         f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
 
