@@ -1,8 +1,10 @@
 import os
+import re
+
+import google.generativeai as genai
 import streamlit as st
 from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
-import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -17,19 +19,23 @@ prompt = """Welcome, Video Summarizer! Your task is to distill the essence of a 
 # Function to extract transcript details from a YouTube video URL
 def extract_transcript_details(youtube_video_url):
     try:
-        video_id = youtube_video_url.split("=")[1]
-        transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
-
-        transcript = ""
-        for i in transcript_text:
-            transcript += " " + i["text"]
-
-        return transcript
+        match = re.search(r"(v=|watch\?v=)([a-zA-Z0-9_-]+)", youtube_video_url)
+        if match:
+            video_id = match.group(2)
+            print(video_id)
+            transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript = " ".join([item["text"] for item in transcript_text])
+            return transcript
+        else:
+            raise ValueError("Invalid YouTube URL format.")
+    except ConnectionError:
+        raise ConnectionError("Network error occurred.")
     except Exception as e:
         raise e
 
-
 # Function to generate summary using Google Gemini Pro
+
+
 def generate_gemini_content(transcript_text, prompt):
     model = genai.GenerativeModel("gemini-pro")
     response = model.generate_content(prompt + transcript_text)
@@ -44,7 +50,8 @@ youtube_link = st.text_input("Enter YouTube Video Link:")
 
 if youtube_link:
     video_id = youtube_link.split("=")[1]
-    st.image(f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
+    st.image(
+        f"http://img.youtube.com/vi/{video_id}/0.jpg", use_column_width=True)
 
 # Button to trigger summary generation
 if st.button("Get Detailed Notes"):
